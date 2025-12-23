@@ -16,7 +16,7 @@ spec:
         # Govern the spread/scheduling of the component
         - type: spreadscaler
           properties:
-            instances: 1
+            instances: 100
         - type: link
           properties:
             namespace: wasi
