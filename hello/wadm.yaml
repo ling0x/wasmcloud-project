@@ -1,15 +1,9 @@
 apiVersion: core.oam.dev/v1beta1
 kind: Application
 metadata:
-  name: rust-hello-world
+  name: hello-world
   annotations:
-    description: 'HTTP hello world demo in Rust, using the WebAssembly Component Model and WebAssembly Interfaces Types (WIT)'
-    wasmcloud.dev/authors: wasmCloud team
-    wasmcloud.dev/source-url: https://github.com/wasmCloud/wasmCloud/blob/main/examples/rust/components/http-hello-world/wadm.yaml
-    wasmcloud.dev/readme-md-url: https://github.com/wasmCloud/wasmCloud/blob/main/examples/rust/components/http-hello-world/README.md
-    wasmcloud.dev/homepage: https://github.com/wasmCloud/wasmCloud/tree/main/examples/rust/components/http-hello-world
-    wasmcloud.dev/categories: |
-      http,http-server,rust,hello-world,example
+    description: 'HTTP hello world demo'
 spec:
   components:
     - name: http-component
@@ -23,6 +17,26 @@ spec:
         - type: spreadscaler
           properties:
             instances: 1
+        - type: link
+          properties:
+            namespace: wasi
+            package: keyvalue
+            interfaces:
+            - store
+            - atomics
+            target:
+              name: kv-nats
+              config:
+              - name: wasi-keyvalue-config
+                properties:
+                  bucket: wasmcloud
+                  enable_bucket_auto_create: 'true'
+     
+    # Add a capability provider for key-value access using NATS
+    - name: kv-nats
+      type: capability
+      properties:
+        image: ghcr.io/wasmcloud/keyvalue-nats:0.4.1
 
     # Add a capability provider that enables HTTP access
     - name: httpserver

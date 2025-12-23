@@ -1,3 +1,5 @@
+use std::{thread, time};
+
 use wasmcloud_component::http::ErrorCode;
 use wasmcloud_component::wasi::keyvalue::*;
 use wasmcloud_component::{http, info};
@@ -23,6 +25,13 @@ impl http::Server for Component {
 
         info!("Greeting {name}");
 
+        let sleep = time::Duration::from_secs(2);
+        info!(
+            "Sleep for {} to simulate longer processing time",
+            sleep.as_secs()
+        );
+        thread::sleep(sleep);
+
         let bucket = store::open("default").map_err(|e| {
             ErrorCode::InternalError(Some(format!("failed to open KV bucket: {e:?}")))
         })?;
@@ -30,6 +39,8 @@ impl http::Server for Component {
         let count = atomics::increment(&bucket, name, 1).map_err(|e| {
             ErrorCode::InternalError(Some(format!("failed to increment counter: {e:?}")))
         })?;
+
+        info!("Replying greeting 'Hello x{count}, {name}!'");
 
         Ok(http::Response::new(format!("Hello x{count}, {name}!\n")))
     }
