@@ -1,4 +1,6 @@
-use wasmcloud_component::http;
+use wasmcloud_component::http::ErrorCode;
+use wasmcloud_component::wasi::keyvalue::*;
+use wasmcloud_component::{http, info};
 
 struct Component;
 
@@ -18,6 +20,17 @@ impl http::Server for Component {
             ["name", name] => name,
             _ => "World",
         };
-        Ok(http::Response::new(format!("Hello, {name}!\n")))
+
+        info!("Greeting {name}");
+
+        let bucket = store::open("default").map_err(|e| {
+            ErrorCode::InternalError(Some(format!("failed to open KV bucket: {e:?}")))
+        })?;
+
+        let count = atomics::increment(&bucket, name, 1).map_err(|e| {
+            ErrorCode::InternalError(Some(format!("failed to increment counter: {e:?}")))
+        })?;
+
+        Ok(http::Response::new(format!("Hello x{count}, {name}!\n")))
     }
 }
