@@ -6,8 +6,18 @@ http::export!(Component);
 
 impl http::Server for Component {
     fn handle(
-        _request: http::IncomingRequest,
+        request: http::IncomingRequest,
     ) -> http::Result<http::Response<impl http::OutgoingBody>> {
-        Ok(http::Response::new("Hello from Wasm Component!\n"))
+        let (parts, _body) = request.into_parts();
+        let query = parts
+            .uri
+            .query()
+            .map(ToString::to_string)
+            .unwrap_or_default();
+        let name = match query.split("=").collect::<Vec<&str>>()[..] {
+            ["name", name] => name,
+            _ => "World",
+        };
+        Ok(http::Response::new(format!("Hello, {name}!\n")))
     }
 }
