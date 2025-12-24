@@ -268,7 +268,7 @@ impl Handler<Option<Context>> for NatsMessagingProvider {
 
         // Publish the message
         let res = nats_client
-            .publish(msg.subject.to_string(), msg.body)
+            .publish(msg.subject.to_string(), msg.body.into())
             .await
             .map_err(|e| e.to_string());
         // (Optional) Flush the NATS client to ensure the message is sent
@@ -305,7 +305,7 @@ impl Handler<Option<Context>> for NatsMessagingProvider {
 
         // Publish the message
         let res = nats_client
-            .request(subject.to_string(), body)
+            .request(subject.to_string(), body.into())
             .await
             .map(|msg| BrokerMessage {
                 body: msg.payload,
