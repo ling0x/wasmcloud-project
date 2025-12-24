@@ -149,7 +149,7 @@ impl NatsMessagingProvider {
     }
 }
 
-async fn dispatch_msg(component_id: &str, nats_msg: async_nats::Message) {
+async fn dispatch_msg(component_id: &str, nats_msg: async_nats::Message) -> anyhow::Result<()> {
     let msg = BrokerMessage {
         body: nats_msg.payload,
         reply_to: nats_msg.reply.map(|s| s.to_string()),
@@ -162,8 +162,22 @@ async fn dispatch_msg(component_id: &str, nats_msg: async_nats::Message) {
         "sending message to component",
     );
 
-    // TODO: Send the message to the component's `wasmcloud:messaging/handler.handle-message` function
-    todo!("Use wasmcloud:messaging/handler for NATS provider")
+    if let Err(e) = bindings::wasmcloud::messaging::handler::handle_message(
+        &get_connection()
+            .get_wrpc_client(component_id)
+            .await
+            .context("failed to get wrpc client")?,
+        nats_msg.headers,
+        &msg,
+    )
+    .await?
+    {
+        error!(
+            error = %e,
+            "Unable to send message"
+        );
+    }
+    Ok(())
 }
 
 impl Provider for NatsMessagingProvider {
@@ -232,10 +246,34 @@ impl Handler<Option<Context>> for NatsMessagingProvider {
     /// Components will call this function to publish a message to a subject
     async fn publish(
         &self,
-        _ctx: Option<Context>,
-        _msg: BrokerMessage,
+        ctx: Option<Context>,
+        msg: BrokerMessage,
     ) -> anyhow::Result<Result<(), String>> {
-        todo!("Implement wasmcloud:messaging/consumer.publish for NATS provider")
+        // Retrieve the NATS client for the component
+        let nats_client =
+            if let Some(ref source_id) = ctx.and_then(|Context { component, .. }| component) {
+                let components = self.components.read().await;
+                let nats_bundle = match components.get(source_id) {
+                    Some(nats_bundle) => nats_bundle,
+                    None => {
+                        error!("component not linked: {source_id}");
+                        bail!("component not linked: {source_id}")
+                    }
+                };
+                nats_bundle.client.clone()
+            } else {
+                error!("component did not make request");
+                bail!("component did not make request")
+            };
+
+        // Publish the message
+        let res = nats_client
+            .publish(msg.subject.to_string(), msg.body)
+            .await
+            .map_err(|e| e.to_string());
+        // (Optional) Flush the NATS client to ensure the message is sent
+        let _ = nats_client.flush().await;
+        Ok(res)
     }
 
     // TODO: Implement `wasmcloud:messaging/consumer.publish` for the NATS provider
@@ -243,11 +281,40 @@ impl Handler<Option<Context>> for NatsMessagingProvider {
     /// a response back
     async fn request(
         &self,
-        _ctx: Option<Context>,
-        _subject: String,
-        _body: Bytes,
+        ctx: Option<Context>,
+        subject: String,
+        body: Bytes,
         _timeout_ms: u32,
     ) -> anyhow::Result<Result<BrokerMessage, String>> {
-        todo!("Implement wasmcloud:messaging/consumer.request for NATS provider")
+        // Retrieve the NATS client for the component
+        let nats_client =
+            if let Some(ref source_id) = ctx.and_then(|Context { component, .. }| component) {
+                let components = self.components.read().await;
+                let nats_bundle = match components.get(source_id) {
+                    Some(nats_bundle) => nats_bundle,
+                    None => {
+                        error!("component not linked: {source_id}");
+                        bail!("component not linked: {source_id}")
+                    }
+                };
+                nats_bundle.client.clone()
+            } else {
+                error!("component did not make request");
+                bail!("component did not make rrequest")
+            };
+
+        // Publish the message
+        let res = nats_client
+            .request(subject.to_string(), body)
+            .await
+            .map(|msg| BrokerMessage {
+                body: msg.payload,
+                reply_to: msg.reply.map(|s| s.to_string()),
+                subject: msg.subject.to_string(),
+            })
+            .map_err(|e| e.to_string());
+        // (Optional) Flush the NATS client to ensure the message is sent
+        let _ = nats_client.flush().await;
+        Ok(res)
     }
 }
