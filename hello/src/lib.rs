@@ -4,6 +4,8 @@ use wasmcloud_component::http::ErrorCode;
 use wasmcloud_component::wasi::keyvalue::*;
 use wasmcloud_component::{http, info};
 
+mod data;
+
 struct Component;
 
 http::export!(Component);

@@ -24,7 +24,7 @@ interface calculator {
     }
 
     // Request information about the system the provider is running on
-    calculate: func(numbers: numbers) -> string;
+    multiply: func(numbers: numbers) -> s32;
 
     // Example export to call from the provider for testing
     call: func() -> string;

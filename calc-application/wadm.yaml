@@ -79,6 +79,6 @@ spec:
             interfaces: [handler]
             source:
               config:
-                - name: simple-subscription
+                - name: nats-subscriptions
                   properties:
-                    subscriptions: wasmcloud.echo
+                    subscriptions: wasmcloud.echo, calculator.add, calculator.substract, calculator.multiply, calculator.divide, calculator.modulus

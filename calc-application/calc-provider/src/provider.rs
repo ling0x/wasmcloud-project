@@ -84,12 +84,12 @@ impl CustomTemplateProvider {
 /// link to the provider. The `Handler` trait is generated for each export in the WIT world.
 impl Handler<Option<Context>> for CustomTemplateProvider {
     /// Request information about the system the provider is running on
-    async fn calculate(&self, _ctx: Option<Context>, numbers: Numbers) -> anyhow::Result<String> {
+    async fn multiply(&self, _ctx: Option<Context>, numbers: Numbers) -> anyhow::Result<i32> {
         // The `ctx` contains information about the component that invoked the request. You can use
         // this information to look up the configuration of the component that invoked the request.
         let result = numbers.number_one * numbers.number_two;
 
-        Ok(format!("The result of the multiplication is: {result}"))
+        Ok(result)
     }
 
     /// Request the provider to send some data to all linked components
