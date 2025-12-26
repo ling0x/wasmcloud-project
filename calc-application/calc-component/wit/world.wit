@@ -1,0 +1,16 @@
+package wasmcloud:custom;
+
+world component {
+  // Import logging for processing data
+  import wasi:logging/logging@0.1.0-draft;
+
+  // Implement a way to receive NATS messaging
+  import wasmcloud:messaging/consumer@0.2.0;
+  export wasmcloud:messaging/handler@0.2.0;
+
+  // Notice here the component has the inverse direction for importing/exporting interfaces
+  // compared to the provider. This allows us to compose the component with the provider, each
+  // import linking up to an export.
+  import wasmcloud:calculation/calculator;
+  export wasmcloud:calculation/process-data;
+}

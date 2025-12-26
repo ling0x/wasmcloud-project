@@ -1,0 +1,82 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: calc
+  annotations:
+    version: v0.0.1
+    description: 'An application with a custom calculation provider and component built for extending wasmCloud with custom capabilities'
+spec:
+  components:
+    - name: calc-component
+      type: component
+      properties:
+        image: file://./calc-component/build/custom_template_test_component.wasm
+      traits:
+        - type: spreadscaler
+          properties:
+            instances: 5
+        # Link the component to the provider on wasmcloud:calculation/calculator
+        - type: link
+          properties:
+            target:
+              name: calc-provider
+            namespace: wasmcloud
+            package: calculation
+            interfaces: [calculator]
+        # Link to NATS messaging to receive messages
+        - type: link
+          properties:
+            target:
+              name: nats-messaging
+            namespace: wasmcloud
+            package: messaging
+            interfaces: [consumer]
+            source:
+              config:
+                - name: subscriptions
+                  properties:
+                    subscriptions: data.process  # The NATS subject to listen on
+
+    # Capability provider - calc provider:
+    - name: calc-provider
+      type: capability
+      properties:
+        image: file://./calc-provider/build/wasmcloud-provider-custom-template.par.gz
+        config:
+          - name: provider-config
+            properties:
+              foo: bar
+      traits:
+        # Link the provider to the component on wasmcloud:example/process-data
+        - type: link
+          properties:
+            target:
+              name: calc-component
+            namespace: wasmcloud
+            package: calculation
+            interfaces: [process-data]
+
+    # Capability providers - messaging nats:
+    - name: nats-messaging
+      type: capability
+      properties:
+        image: file://./messaging-nats/build/wasmcloud-example-messaging-nats.par.gz
+      traits:
+        # Since the `nats` capability provider calls an component to handle messages
+        # coming over subscriptions, this provider needs a unidirectional link to the
+        # component that will be called.
+        #
+        # Here we link the `nats` provider (the "source"), to the `calc` component (the "target"),
+        # so that so the provider can deliver messages to the component (by invoking the wasmcloud:messaging/handler interface) .
+        - type: link
+          properties:
+            target:
+              name: calc-component
+            namespace: wasmcloud
+            package: messaging
+            interfaces: [handler]
+            source:
+              config:
+                - name: nats-subscriptions
+                  properties:
+                    subscriptions: data.process

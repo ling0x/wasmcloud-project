@@ -1,0 +1,39 @@
+package wasmcloud:calculation;
+
+// This interface is generic and includes a function to process some
+// data, returning a string result.
+// We'll use this to send structured data to a component for processing.
+interface process-data {
+    record data {
+        first-number: s32,
+        second-number: s32,
+    }
+
+    // Send structured data to the component for processing
+    process: func(data: data) -> string;
+}
+
+// While processing data, sometimes a component may need to request
+// information about the system it's running on. The component isn't
+// allowed to access this information directly, so it can request it
+// from the provider.
+interface calculator {
+    record numbers {
+        number-one: s32,
+        number-two: s32,
+    }
+
+    // Request information about the system the provider is running on
+    calculate: func(numbers: numbers) -> string;
+
+    // Example export to call from the provider for testing
+    call: func() -> string;
+}
+
+// The `world` defines all of the imports and exports our provider can use / must implement.
+world provider {
+    // Providers `import` functions that it can call on a component
+    import process-data;
+    // Providers `export` functions that a component can call
+    export calculator;
+}

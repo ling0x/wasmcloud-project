@@ -18,6 +18,10 @@ Deploy the component: `wash app deploy wadm.yaml`
 
 `wash spy --experimental hello_world-http_component`
 
+## Undeploy
+
+Remove all apps, providers and links from the host: `wash app undeploy --all`
+
 ## Cleanup
 
 When you're done with the application, delete it from the wasmCloud environment:

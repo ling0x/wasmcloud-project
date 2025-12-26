@@ -1,0 +1,15 @@
+package wasmcloud:provider-messaging-nats;
+
+world provider-messaging-nats {
+    /*
+    Here we import the handler interface, and we're going to invoke a linked
+    component any time we receive a message on a NATS subscription.
+    */
+    import wasmcloud:messaging/handler@0.2.0;
+
+    /*
+    Here we export the entire consumer interface, so we'll need to implement
+    the publish and request functionality in the provider.
+    */
+    export wasmcloud:messaging/consumer@0.2.0;
+}
