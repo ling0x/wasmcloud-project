@@ -2,7 +2,7 @@
 
 Invoke the provider directly:
 
-`wash call calc-calc_provider wasmcloud:calculation/calculator.call`
+`wash call calc-calc_provider wasmcloud:calculation/multiply.call`
 
 # Check provider health
 
